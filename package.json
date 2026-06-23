@@ -19,11 +19,26 @@
     "dev": "concurrently --names 'Node,Vite' -c 'green,blue' 'npm run dev -w backend' 'npm run dev -w frontend'",
     "sqlz": "npx -w backend sequelize-cli",
     "start": "npm run build -w frontend && npm run start -w backend",
-    "test": "vitest"
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:vitest": "vitest run",
+    "test:vitest:coverage": "vitest run --coverage",
+    "test:unit": "cross-env NODE_ENV=test jest tests/unit",
+    "test:integration": "cross-env NODE_ENV=test jest tests/integration --runInBand",
+    "test:jest": "cross-env NODE_ENV=test jest --runInBand",
+    "test:jest:coverage": "cross-env NODE_ENV=test jest --runInBand --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:load": "echo \"Load-Tests: siehe load/ (k6 run load/<script>.js)\" && exit 0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@vitejs/plugin-react-swc": "^4.2.3",
+    "@vitest/coverage-v8": "^4.1.9",
     "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
+    "jsdom": "^25.0.1",
     "vitest": "^4.0.18"
   }
 }

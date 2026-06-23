@@ -1,0 +1,25 @@
+# Test-/Entwicklungs-Datenbank für conduit-realworld-example-app.
+# Startet eine PostgreSQL-Instanz und legt zusätzlich die Test-Datenbank an.
+# Verwendung:  docker compose up -d db
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: conduit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: conduit
+      POSTGRES_PASSWORD: conduit
+      POSTGRES_DB: database_development
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+      - conduit-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conduit -d database_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  conduit-pgdata:
