@@ -1,0 +1,176 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: load/auth-stress.js
+        output: json (load/results/auth-stress.json)
+
+     scenarios: (100.00%) 1 scenario, 100 max VUs, 45s max duration (incl. graceful stop):
+              * auth_spike: Up to 100 looping VUs for 40s over 4 stages (gracefulRampDown: 5s, gracefulStop: 30s)
+
+
+running (01.0s), 000/100 VUs, 0 complete and 0 interrupted iterations
+auth_spike   [   2% ] 000/100 VUs  00.9s/40.0s
+
+running (02.0s), 001/100 VUs, 12 complete and 0 interrupted iterations
+auth_spike   [   5% ] 001/100 VUs  01.9s/40.0s
+
+running (03.0s), 002/100 VUs, 41 complete and 0 interrupted iterations
+auth_spike   [   7% ] 002/100 VUs  02.9s/40.0s
+
+running (04.0s), 003/100 VUs, 94 complete and 0 interrupted iterations
+auth_spike   [  10% ] 003/100 VUs  03.9s/40.0s
+
+running (05.0s), 004/100 VUs, 170 complete and 0 interrupted iterations
+auth_spike   [  12% ] 004/100 VUs  04.9s/40.0s
+
+running (06.0s), 005/100 VUs, 254 complete and 0 interrupted iterations
+auth_spike   [  15% ] 005/100 VUs  05.9s/40.0s
+
+running (07.0s), 006/100 VUs, 342 complete and 0 interrupted iterations
+auth_spike   [  17% ] 006/100 VUs  06.9s/40.0s
+
+running (08.0s), 007/100 VUs, 426 complete and 0 interrupted iterations
+auth_spike   [  20% ] 007/100 VUs  07.9s/40.0s
+
+running (09.0s), 008/100 VUs, 512 complete and 0 interrupted iterations
+auth_spike   [  22% ] 008/100 VUs  08.9s/40.0s
+
+running (10.0s), 009/100 VUs, 598 complete and 0 interrupted iterations
+auth_spike   [  25% ] 009/100 VUs  09.9s/40.0s
+
+running (11.0s), 026/100 VUs, 684 complete and 0 interrupted iterations
+auth_spike   [  27% ] 026/100 VUs  10.9s/40.0s
+
+running (12.0s), 044/100 VUs, 769 complete and 0 interrupted iterations
+auth_spike   [  30% ] 044/100 VUs  11.9s/40.0s
+
+running (13.0s), 062/100 VUs, 849 complete and 0 interrupted iterations
+auth_spike   [  32% ] 062/100 VUs  12.9s/40.0s
+
+running (14.0s), 080/100 VUs, 932 complete and 0 interrupted iterations
+auth_spike   [  35% ] 080/100 VUs  13.9s/40.0s
+
+running (15.0s), 098/100 VUs, 1014 complete and 0 interrupted iterations
+auth_spike   [  37% ] 098/100 VUs  14.9s/40.0s
+
+running (16.0s), 100/100 VUs, 1093 complete and 0 interrupted iterations
+auth_spike   [  40% ] 100/100 VUs  15.9s/40.0s
+
+running (17.0s), 100/100 VUs, 1177 complete and 0 interrupted iterations
+auth_spike   [  42% ] 100/100 VUs  16.9s/40.0s
+
+running (18.0s), 100/100 VUs, 1260 complete and 0 interrupted iterations
+auth_spike   [  45% ] 100/100 VUs  17.9s/40.0s
+
+running (19.0s), 100/100 VUs, 1343 complete and 0 interrupted iterations
+auth_spike   [  47% ] 100/100 VUs  18.9s/40.0s
+
+running (20.0s), 100/100 VUs, 1425 complete and 0 interrupted iterations
+auth_spike   [  50% ] 100/100 VUs  19.9s/40.0s
+
+running (21.0s), 100/100 VUs, 1501 complete and 0 interrupted iterations
+auth_spike   [  52% ] 100/100 VUs  20.9s/40.0s
+
+running (22.0s), 100/100 VUs, 1584 complete and 0 interrupted iterations
+auth_spike   [  55% ] 100/100 VUs  21.9s/40.0s
+
+running (23.0s), 100/100 VUs, 1672 complete and 0 interrupted iterations
+auth_spike   [  57% ] 100/100 VUs  22.9s/40.0s
+
+running (24.0s), 100/100 VUs, 1758 complete and 0 interrupted iterations
+auth_spike   [  60% ] 100/100 VUs  23.9s/40.0s
+
+running (25.0s), 100/100 VUs, 1845 complete and 0 interrupted iterations
+auth_spike   [  62% ] 100/100 VUs  24.9s/40.0s
+
+running (26.0s), 100/100 VUs, 1932 complete and 0 interrupted iterations
+auth_spike   [  65% ] 100/100 VUs  25.9s/40.0s
+
+running (27.0s), 100/100 VUs, 2019 complete and 0 interrupted iterations
+auth_spike   [  67% ] 100/100 VUs  26.9s/40.0s
+
+running (28.0s), 100/100 VUs, 2104 complete and 0 interrupted iterations
+auth_spike   [  70% ] 100/100 VUs  27.9s/40.0s
+
+running (29.0s), 100/100 VUs, 2189 complete and 0 interrupted iterations
+auth_spike   [  72% ] 100/100 VUs  28.9s/40.0s
+
+running (30.0s), 100/100 VUs, 2275 complete and 0 interrupted iterations
+auth_spike   [  75% ] 100/100 VUs  29.9s/40.0s
+
+running (31.0s), 100/100 VUs, 2361 complete and 0 interrupted iterations
+auth_spike   [  77% ] 100/100 VUs  30.9s/40.0s
+
+running (32.0s), 100/100 VUs, 2446 complete and 0 interrupted iterations
+auth_spike   [  80% ] 100/100 VUs  31.9s/40.0s
+
+running (33.0s), 100/100 VUs, 2533 complete and 0 interrupted iterations
+auth_spike   [  82% ] 100/100 VUs  32.9s/40.0s
+
+running (34.0s), 100/100 VUs, 2617 complete and 0 interrupted iterations
+auth_spike   [  85% ] 100/100 VUs  33.9s/40.0s
+
+running (35.0s), 100/100 VUs, 2702 complete and 0 interrupted iterations
+auth_spike   [  87% ] 100/100 VUs  34.9s/40.0s
+
+running (36.0s), 095/100 VUs, 2787 complete and 0 interrupted iterations
+auth_spike   [  90% ] 095/100 VUs  35.9s/40.0s
+
+running (37.0s), 074/100 VUs, 2873 complete and 0 interrupted iterations
+auth_spike   [  92% ] 074/100 VUs  36.9s/40.0s
+
+running (38.0s), 051/100 VUs, 2958 complete and 0 interrupted iterations
+auth_spike   [  95% ] 051/100 VUs  37.9s/40.0s
+
+running (39.0s), 026/100 VUs, 3043 complete and 0 interrupted iterations
+auth_spike   [  97% ] 026/100 VUs  38.9s/40.0s
+
+running (40.0s), 003/100 VUs, 3129 complete and 0 interrupted iterations
+auth_spike   [ 100% ] 003/100 VUs  39.9s/40.0s
+
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✓ 'p(95)<2000' p(95)=1.22s
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 6270    156.138361/s
+    checks_succeeded...: 100.00% 6270 out of 6270
+    checks_failed......: 0.00%   0 out of 6270
+
+    ✓ status is 200
+    ✓ got token
+
+    HTTP
+    http_req_duration..............: avg=831.06ms min=46.24ms med=1.15s max=1.3s p(90)=1.2s p(95)=1.22s
+      { expected_response:true }...: avg=831.06ms min=46.24ms med=1.15s max=1.3s p(90)=1.2s p(95)=1.22s
+    http_req_failed................: 0.00%  0 out of 3136
+    http_reqs......................: 3136   78.094083/s
+
+    EXECUTION
+    iteration_duration.............: avg=831.42ms min=46.24ms med=1.15s max=1.3s p(90)=1.2s p(95)=1.22s
+    iterations.....................: 3135   78.069181/s
+    vus............................: 3      min=0         max=100
+    vus_max........................: 100    min=100       max=100
+
+    NETWORK
+    data_received..................: 1.8 MB 44 kB/s
+    data_sent......................: 684 kB 17 kB/s
+
+
+
+
+running (40.2s), 000/100 VUs, 3135 complete and 0 interrupted iterations
+auth_spike ✓ [ 100% ] 000/100 VUs  40s
