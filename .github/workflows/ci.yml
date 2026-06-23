@@ -1,0 +1,87 @@
+name: CI
+
+# Läuft auf einem self-hosted Runner (Windows + Docker Desktop).
+# PostgreSQL wird per docker compose bereitgestellt (statt services:-Container,
+# die auf Windows-Runnern nicht unterstützt werden).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: [self-hosted]
+    defaults:
+      run:
+        shell: bash
+
+    # DB-Zugangsdaten passend zu docker-compose.yml; JWT-Key für die Auth-Helfer.
+    env:
+      JWT_KEY: ci_secret_key
+      PORT: "3001"
+      TEST_DB_USERNAME: conduit
+      TEST_DB_PASSWORD: conduit
+      TEST_DB_NAME: database_testing
+      TEST_DB_HOSTNAME: 127.0.0.1
+      TEST_DB_DIALECT: postgres
+      TEST_DB_LOGGING: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser (chromium)
+        run: npx playwright install chromium
+
+      - name: Start PostgreSQL (docker compose)
+        run: docker compose up -d db
+
+      - name: Wait for PostgreSQL to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' conduit-postgres 2>/dev/null || echo starting)
+            echo "postgres health=$status"
+            [ "$status" = "healthy" ] && exit 0
+            sleep 2
+          done
+          echo "PostgreSQL did not become healthy in time" >&2
+          exit 1
+
+      - name: Lint (falls vorhanden)
+        run: npm run lint --if-present
+
+      - name: Unit tests (Vitest – Upstream-Baseline)
+        run: npm run test:vitest
+
+      - name: Unit tests (Jest)
+        run: npm run test:unit
+
+      - name: Integration tests (Jest + Supertest, PostgreSQL)
+        run: npm run test:integration
+
+      - name: E2E tests (Playwright)
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Stop PostgreSQL
+        if: always()
+        run: docker compose down
