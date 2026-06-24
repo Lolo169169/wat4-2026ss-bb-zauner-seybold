@@ -3,6 +3,9 @@ name: CI
 # Läuft auf einem self-hosted Runner (Windows + Docker Desktop).
 # PostgreSQL wird per docker compose bereitgestellt (statt services:-Container,
 # die auf Windows-Runnern nicht unterstützt werden).
+# Hinweis: KEIN "shell: bash" erzwingen – auf Windows-Runnern kann das die
+# WSL-Bash treffen, die Windows-Pfade nicht versteht. Wir nutzen die Standard-
+# Shell (PowerShell) und nur einzeilige Befehle; bash-Logik ist nicht nötig.
 
 on:
   push:
@@ -14,9 +17,6 @@ on:
 jobs:
   test:
     runs-on: [self-hosted]
-    defaults:
-      run:
-        shell: bash
 
     # DB-Zugangsdaten passend zu docker-compose.yml; JWT-Key für die Auth-Helfer.
     env:
@@ -45,19 +45,8 @@ jobs:
       - name: Install Playwright browser (chromium)
         run: npx playwright install chromium
 
-      - name: Start PostgreSQL (docker compose)
-        run: docker compose up -d db
-
-      - name: Wait for PostgreSQL to be healthy
-        run: |
-          for i in $(seq 1 30); do
-            status=$(docker inspect -f '{{.State.Health.Status}}' conduit-postgres 2>/dev/null || echo starting)
-            echo "postgres health=$status"
-            [ "$status" = "healthy" ] && exit 0
-            sleep 2
-          done
-          echo "PostgreSQL did not become healthy in time" >&2
-          exit 1
+      - name: Start PostgreSQL (docker compose, warten bis healthy)
+        run: docker compose up -d --wait db
 
       - name: Lint (falls vorhanden)
         run: npm run lint --if-present
