@@ -4,6 +4,9 @@ name: Load Tests (k6)
 # ressourcenintensiv und nicht für jeden Push gedacht.
 # Voraussetzung auf dem self-hosted Runner: k6 installiert (winget GrafanaLabs.k6)
 # und im PATH erreichbar, sowie Docker + Node.
+# Hinweis: KEIN "shell: bash" erzwingen (WSL-Bash-Problem auf Windows-Runnern).
+# Die Orchestrierung (DB + Backend starten, warten, k6, Backend stoppen)
+# übernimmt das npm-Skript "test:load:local" via start-server-and-test.
 
 on:
   workflow_dispatch:
@@ -11,9 +14,6 @@ on:
 jobs:
   load:
     runs-on: [self-hosted]
-    defaults:
-      run:
-        shell: bash
 
     env:
       JWT_KEY: ci_secret_key
@@ -38,33 +38,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Start PostgreSQL (docker compose)
-        run: docker compose up -d db
-
-      - name: Wait for PostgreSQL to be healthy
-        run: |
-          for i in $(seq 1 30); do
-            status=$(docker inspect -f '{{.State.Health.Status}}' conduit-postgres 2>/dev/null || echo starting)
-            echo "postgres health=$status"
-            [ "$status" = "healthy" ] && exit 0
-            sleep 2
-          done
-          echo "PostgreSQL did not become healthy in time" >&2
-          exit 1
-
-      - name: Start backend (test mode) and run k6 scenarios
-        run: |
-          NODE_ENV=test npm run start -w backend &
-          BACKEND_PID=$!
-          echo "backend pid=$BACKEND_PID"
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:3001/ >/dev/null && break || sleep 2
-          done
-          mkdir -p tests/load/results
-          k6 run --out json=tests/load/results/articles-load.json tests/load/articles-load.js
-          k6 run --out json=tests/load/results/auth-stress.json tests/load/auth-stress.js
-          node tests/load/analyze.js
-          kill $BACKEND_PID 2>/dev/null || true
+      - name: Run k6 load tests (startet DB + Backend, führt aus, stoppt Backend)
+        run: npm run test:load:local
 
       - name: Upload load test results (charts + summary)
         if: always()

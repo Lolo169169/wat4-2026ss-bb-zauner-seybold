@@ -25,7 +25,11 @@
     "test:integration": "cross-env NODE_ENV=test jest tests/integration --runInBand",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:jest:coverage": "cross-env NODE_ENV=test jest --runInBand --coverage",
+    "test:load": "k6 run --out json=tests/load/results/articles-load.json tests/load/articles-load.js && k6 run --out json=tests/load/results/auth-stress.json tests/load/auth-stress.js",
     "test:load:report": "node tests/load/analyze.js",
+    "test:load:all": "npm run test:load && npm run test:load:report",
+    "load:backend": "cross-env NODE_ENV=test npm run start -w backend",
     "test:load:local": "docker compose up -d --wait db && start-server-and-test load:backend http://127.0.0.1:3001 test:load:all"
   },
   "devDependencies": {
