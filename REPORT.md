@@ -45,12 +45,12 @@ Begründung: Das Backend ist CommonJS – ideal für Jest. Die klare Trennung �
 
 ### 3.1 Eingesetzte Frameworks
 
-| Stufe | Framework | DB | Verzeichnis |
-|---|---|---|---|
-| Unit | **Jest 29** | – (Mocks) | `tests/unit/` |
-| Integration | **Jest 29 + Supertest 7** | **PostgreSQL** (Docker) | `tests/integration/` |
-| System/E2E | **Playwright** | **PostgreSQL** (Docker) | `e2e/` |
-| Load | **k6** | PostgreSQL (Docker) | `load/` |
+| Stufe | Framework | DB | Verzeichnis                      |
+|---|---|---|----------------------------------|
+| Unit | **Jest 29** | – (Mocks) | `tests/unit/`                    |
+| Integration | **Jest 29 + Supertest 7** | **PostgreSQL** (Docker) | `tests/integration/`             |
+| System/E2E | **Playwright** | **PostgreSQL** (Docker) | `tests/e2e/`                     |
+| Load | **k6** | PostgreSQL (Docker) | `tests/load/`                    |
 | (Baseline) | Vitest 4 | – | `frontend/…`, `backend/helper/…` |
 
 ### 3.2 Datenbank-Strategie: warum echtes PostgreSQL statt SQLite
@@ -212,15 +212,15 @@ Zwei Szenarien gegen die zentralen API-Endpunkte (Backend im Test-Modus gegen di
 
 **Lesepfad `GET /api/articles` – Latenz & Last**
 
-![Latenz und VUs – GET /api/articles](load/charts/articles-load-latency.svg)
+![Latenz und VUs – GET /api/articles](tests/load/charts/articles-load-latency.svg)
 
-![Durchsatz – GET /api/articles](load/charts/articles-load-throughput.svg)
+![Durchsatz – GET /api/articles](tests/load/charts/articles-load-throughput.svg)
 
 **Auth-Pfad `POST /api/users/login` – Latenz & Last (Spike)**
 
-![Latenz und VUs – Login-Stresstest](load/charts/auth-stress-latency.svg)
+![Latenz und VUs – Login-Stresstest](tests/load/charts/auth-stress-latency.svg)
 
-![Durchsatz – Login-Stresstest](load/charts/auth-stress-throughput.svg)
+![Durchsatz – Login-Stresstest](tests/load/charts/auth-stress-throughput.svg)
 
 ### 6.3 Analyse
 

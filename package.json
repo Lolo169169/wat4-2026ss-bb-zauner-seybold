@@ -30,8 +30,11 @@
     "test:jest:coverage": "cross-env NODE_ENV=test jest --runInBand --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:load": "k6 run --out json=load/results/articles-load.json load/articles-load.js && k6 run --out json=load/results/auth-stress.json load/auth-stress.js",
-    "test:load:report": "node load/analyze.js"
+    "test:load": "k6 run --out json=tests/load/results/articles-load.json tests/load/articles-load.js && k6 run --out json=tests/load/results/auth-stress.json tests/load/auth-stress.js",
+    "test:load:report": "node tests/load/analyze.js",
+    "test:load:all": "npm run test:load && npm run test:load:report",
+    "load:backend": "cross-env NODE_ENV=test npm run start -w backend",
+    "test:load:local": "docker compose up -d --wait db && start-server-and-test load:backend http://127.0.0.1:3001 test:load:all"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
@@ -40,6 +43,7 @@
     "concurrently": "^9.2.1",
     "cross-env": "^7.0.3",
     "jsdom": "^25.0.1",
+    "start-server-and-test": "^3.0.11",
     "vitest": "^4.0.18"
   }
 }

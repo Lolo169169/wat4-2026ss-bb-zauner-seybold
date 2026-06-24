@@ -60,10 +60,10 @@ jobs:
           for i in $(seq 1 30); do
             curl -sf http://localhost:3001/ >/dev/null && break || sleep 2
           done
-          mkdir -p load/results
-          k6 run --out json=load/results/articles-load.json load/articles-load.js
-          k6 run --out json=load/results/auth-stress.json load/auth-stress.js
-          node load/analyze.js
+          mkdir -p tests/load/results
+          k6 run --out json=tests/load/results/articles-load.json tests/load/articles-load.js
+          k6 run --out json=tests/load/results/auth-stress.json tests/load/auth-stress.js
+          node tests/load/analyze.js
           kill $BACKEND_PID 2>/dev/null || true
 
       - name: Upload load test results (charts + summary)
@@ -72,8 +72,8 @@ jobs:
         with:
           name: load-results
           path: |
-            load/charts/
-            load/results/summary.md
+            tests/load/charts/
+            tests/load/results/summary.md
           retention-days: 7
 
       - name: Stop PostgreSQL
