@@ -72,36 +72,6 @@ Für Supertest musste die Express-App testbar gemacht werden: **`backend/app.js`
 
 Zusätzlich wurde ein Konfigurationsfehler behoben: `backend/config/config.js` reichte den Umgebungswert `logging` als String durch (Sequelize erwartet `false` oder eine Funktion) – jetzt korrekt zu Boolean/Funktion gewandelt.
 
-### 3.4 Ausführung (reproduzierbare Befehle)
-
-Voraussetzungen: Node.js, Docker Desktop. Einmalig `npm install`.
-
-```bash
-# 1) Test-Datenbank starten (PostgreSQL via Docker)
-npm run db:up
-
-# 2) Unit-Tests (Jest, ohne DB)
-npm run test:unit
-
-# 3) Integrationstests (Jest + Supertest, gegen PostgreSQL)
-npm run test:integration
-
-# 4) Unit + Integration zusammen, mit Coverage
-npm run test:jest:coverage
-
-# 5) E2E-Tests (Playwright startet Backend + Frontend automatisch)
-npm run test:e2e
-
-# 6) Load-Tests (k6) + Auswertung/Diagramme
-npm run test:load
-npm run test:load:report
-
-# (Baseline) Upstream-Vitest-Suite
-npm run test:vitest
-
-# Datenbank stoppen
-npm run db:down
-```
 
 ---
 
@@ -158,7 +128,6 @@ Passend zum Fokus wird die Coverage über die **auth-relevanten Module** gemesse
 | `models/User.js`, `routes/user(s).js` | 100 % | 100 % | 100 % | 100 % |
 | `controllers/users.js` | 93,9 % | 83,3 % | 100 % | 100 % |
 
-Nicht vollständig abgedeckt ist `controllers/user.js`: dessen `updateUser`-Funktion (Profil ändern) liegt außerhalb des getesteten Login-/Register-/Current-User-Flows – bewusst ehrlich ausgewiesen.
 
 ---
 
@@ -226,16 +195,6 @@ Passend zum Auth-Fokus zielen **beide** Szenarien auf den Login-Endpunkt `POST /
 
 ---
 
-## 7. Reproduzierbarkeit & Zusammenfassung
-
-- **Lokal reproduzierbar:** Alle Stufen über die in Abschnitt 3.4 dokumentierten Befehle; einzige Voraussetzung Node + Docker.
-- **Isoliert:** Unit ohne externe Abhängigkeiten; Integration mit Schema-Reset + Truncate pro Test; E2E mit eindeutigen Daten; eigene Test-DB getrennt von Entwicklung.
-- **Automatisiert:** CI-Workflow führt Lint + alle Teststufen aus; Load-Tests separat manuell.
-- **Fokus:** Authentifizierungs-/Login-Bereich, über alle vier Pyramidenstufen abgedeckt.
-- **Mengengerüst erfüllt:** 12 Unit + 8 Integration + 4 E2E + 2 Load = **26 Tests** (Minimum 22).
-- **Coverage (Auth-Slice):** von **1,28 % → 85,3 %** Statements.
-
----
 
 ## 8. Deklaration
 
