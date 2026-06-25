@@ -7,6 +7,13 @@ node_modules
 
 # testing
 coverage
+playwright-report
+test-results
+blob-report
+.playwright
+
+# k6 raw time-series (große JSON-Rohdaten; abgeleitete Charts/Tabellen werden committet)
+tests/load/results/*.json
 
 # production
 build

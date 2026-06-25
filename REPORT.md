@@ -17,6 +17,8 @@
 
 Architektur des Backends: klassische Schichtung in `routes/` → `controllers/` → `models/`, mit Helfern (`helper/`) und Middleware (`middleware/`) für Authentifizierung und Fehlerbehandlung.
 
+> **Testumfang:** Die Aufgabenstellung verlangt die Abdeckung eines *Teilbereichs* der App. Diese Arbeit fokussiert den **Authentifizierungs-/Login-Bereich** (Registrierung, Login, Session) und testet ihn über alle vier Stufen der Testpyramide.
+
 ---
 
 ## 2. Ausgangslage und gewählte Strategie
@@ -103,120 +105,108 @@ npm run db:down
 
 ---
 
-## 4. Die Tests im Detail – und warum es so viele sind
+## 4. Die Tests im Detail (Fokus: Authentifizierung/Login)
 
-Mindestanforderung (Summe 2er-Team): **10 Unit, 6 Integration, 4 E2E, 2 Load = 22**. Umgesetzt:
+Laut Aufgabenstellung muss **nicht die gesamte App**, sondern ein **fachlicher Teilbereich** abgedeckt werden. Wir haben uns bewusst auf den **Authentifizierungs-/Login-Bereich** konzentriert (Registrierung, Login, Session/„Current User") und diesen über **alle vier Stufen der Testpyramide** getestet. Die geforderten Mindestmengen (≥10/6/4/2 = 22) sind dabei eingehalten:
 
 | Stufe | Anzahl | Mindestens | Status |
 |---|---|---|---|
-| Unit | **30** | 10 | ✅ |
-| Integration | **19** | 6 | ✅ |
-| System/E2E | **5** | 4 | ✅ |
+| Unit | **12** | 10 | ✅ |
+| Integration | **8** | 6 | ✅ |
+| System/E2E | **4** | 4 | ✅ |
 | Load | **2** | 2 | ✅ |
-| **Summe** | **56** | 22 | ✅ |
+| **Summe** | **26** | 22 | ✅ |
 
-Die Überschreitung ist **kein Padding**, sondern ergibt sich aus dem Prinzip *„ein Test pro fachlich eigenständigem Pfad/Edge-Case"*. Begründung im Detail:
+Jeder Test deckt einen **eigenen Code-Pfad bzw. eine eigene Eigenschaft** des Login-Bereichs ab – kein Padding.
 
-### 4.1 Warum 30 Unit-Tests (statt 10)
+### 4.1 Unit-Tests (12) – die sicherheitskritischen Auth-Bausteine
 
-Getestet werden die **sicherheits- und logikkritischen** Bausteine. Jeder Test deckt einen **eigenen Code-Pfad bzw. eine eigene Eigenschaft** ab – würde man kürzen, bliebe jeweils echtes Verhalten ungetestet:
-
-| Modul | Tests | Distinkte Pfade/Eigenschaften (warum nicht weniger) |
+| Modul | Tests | Distinkte Pfade/Eigenschaften |
 |---|---|---|
-| `helper/bcrypt` | 4 | Hash ≠ Klartext **und** bcrypt-Format; korrekte Verifikation; **falsche** Verifikation; **Salting** (zwei Hashes verschieden). Jede Zeile prüft eine andere Sicherheitsgarantie. |
-| `helper/jwt` | 4 | Token-Struktur; **keine sensiblen Felder** im Token (Sicherheit); Round-Trip; **Manipulation wirft**. |
-| `helper/helpers` (`slugify`) | 4 | Edge-Cases jenseits der Baseline: Normalfall, Ziffern, Mehrfach-Sonderzeichen, Unicode-Grenze. |
-| `helper/customErrors` | 8 | 5× Message-Format **+ 3× Vererbung**. Die Vererbung ist nicht trivial: der zentrale `errorHandler` entscheidet per `instanceof` über den HTTP-Status – fällt z. B. `FieldRequiredError instanceof ValidationError` weg, bricht das 422-Mapping. |
-| `middleware/errorHandler` | 6 | Je ein Test pro Status-Zweig (401/403/404/422/500) **+ Response-Schema**. Weniger Tests = ungetestete Verzweigungen. |
-| `middleware/authentication` | 4 | Kein Header → Durchlauf; malformed Token → `SyntaxError`; gültig + User; gültig + kein User → `NotFoundError`. Das sind die vier realen Verzweigungen der Funktion. |
+| `helper/bcrypt` | 4 | Hash ≠ Klartext **und** bcrypt-Format; korrekte Verifikation; **falsche** Verifikation; **Salting** (zwei Hashes verschieden). |
+| `helper/jwt` | 4 | Token-Struktur; **keine sensiblen Felder** im Token; Round-Trip; **Manipulation wirft**. |
+| `middleware/authentication` | 4 | Kein Header → Durchlauf; malformed Token → `SyntaxError`; gültig + User; gültig + kein User → `NotFoundError`. |
 
-Konkret: Eine Reduktion auf 10 würde z. B. das Salting (Sicherheit), die `instanceof`-Hierarchie (Grundlage des Fehler-Mappings) oder einzelne Status-Zweige des `errorHandler` ungetestet lassen – also genau die Stellen, an denen ein Refactoring unbemerkt brechen könnte.
+Das sind exakt die Module, die **Passwort-Hashing, Token-Handling und die Absicherung geschützter Routen** umsetzen – jede Zeile prüft eine eigene Sicherheits-/Verhaltensgarantie (z. B. dass Tokens kein Passwort enthalten oder dass Hashes gesalzen sind).
 
-### 4.2 Warum 19 Integration-Tests (statt 6)
+### 4.2 Integration-Tests (8) – die Auth-Endpunkte end-to-end
 
-Pro REST-Ressource wird **nicht nur der Happy Path**, sondern auch der **Fehler-/Vertragspfad** getestet. In einer echten API ist der Fehlerkontrakt (Statuscodes 401/403/404/422) ebenso wichtig wie der Erfolgsfall – und es sind genau die Pfade, an denen das PostgreSQL-/Constraint-Verhalten zum Tragen kommt:
+`tests/integration/auth.test.js` prüft gegen echtes PostgreSQL je **Happy Path und Fehlerkontrakt**:
 
-| Datei | Tests | Abgedeckte Pfade |
-|---|---|---|
-| `auth.test.js` | 8 | Register: 201 + Token + **kein Passwort-Leak**; fehlendes Feld → 422; **Duplikat-E-Mail → 422** (Unique-Constraint). Login: Erfolg; falsches Passwort → 422; unbekannte E-Mail → 404. Current-User: 401 ohne Token; 200 mit Token. |
-| `articles.test.js` | 7 | Create: **Auth-Pflicht (401)**; Slug-Ableitung; **Duplikat-Slug → 422**; fehlender Titel → 422. Read: Round-Trip per Slug; 404 bei unbekanntem Slug; Liste mit Count. |
-| `comments-tags.test.js` | 4 | Kommentar anlegen (201) + Auflisten; leerer Body → 422; Tags-Endpunkt; **404-Fallback** für unbekannte Routen. |
-
-Eine Reduktion auf 6 würde bedeuten, fast alle **Negativ-/Fehlerpfade** zu streichen – also Validierung, Authentifizierung und Constraint-Verhalten, die erfahrungsgemäß am häufigsten regressieren.
-
-### 4.3 Wirkung auf die Coverage (Beleg, dass die Tests „greifen")
-
-Unit + Integration zusammen heben die Backend-Coverage von **1,28 %** auf:
-
-| Bereich | Statements | Branches | Functions | Lines |
-|---|---|---|---|---|
-| **Gesamt (Backend)** | **71,66 %** | 46,15 % | 78,43 % | 74,94 % |
-| `helper/` | 100 % | 66,7 % | 100 % | 100 % |
-| `middleware/` | 97,6 % | 93,8 % | 100 % | 100 % |
-| `models/` | 98 % | 71,4 % | 93,3 % | 98 % |
-| `routes/` | ~98–100 % | 100 % | 100 % | ~98 % |
-| `controllers/` | 53 % | 33,3 % | 44,4 % | 56,5 % |
-
-Die nicht abgedeckten Controller (`favorites`, `profiles`, Teile von `articles`) sind bewusst **ehrlich ausgewiesen**: Sie zeigen den nächsten sinnvollen Ausbauschritt, ohne dass wir die Zahlen mit Trivial-Tests „schönen".
-
-### 4.4 System-/E2E-Tests (5)
-
-Echte Browser-Flows mit Playwright (Chromium), Backend + Frontend werden automatisch hochgefahren:
-
-| Datei | Flow |
+| Bereich | Geprüfte Pfade |
 |---|---|
-| `e2e/auth.spec.js` | Registrierung → eingeloggt; Login über Formular; **ungültiger Login → Fehlermeldung**; Logout → ausgeloggte Navigation |
-| `e2e/article.spec.js` | Eingeloggt einen Artikel verfassen → Veröffentlichen → Artikel-Detailseite zeigt den Titel |
+| Register | 201 + Token + **kein Passwort-Leak**; fehlendes Feld → 422; **Duplikat-E-Mail → 422** (Unique-Constraint) |
+| Login | Erfolg + Token; falsches Passwort → 422; unbekannte E-Mail → 404 |
+| Current-User | 401 ohne Token; 200 mit Token |
 
-Der fünfte Test (Logout) über die Mindestanzahl hinaus deckt den vollständigen Auth-Lebenszyklus (an/abmelden) ab und ist daher fachlich gerechtfertigt.
+Gerade die Fehlerpfade (401/422/404) und der Unique-Constraint sind der Grund für die **echte DB** statt SQLite.
+
+### 4.3 System-/E2E-Tests (4) – der Login-Lebenszyklus im Browser
+
+Playwright (Chromium), Backend + Frontend werden automatisch gestartet. `tests/e2e/auth.spec.js`:
+Registrierung → eingeloggt; Login über das Formular; **ungültiger Login → Fehlermeldung**; Logout → ausgeloggte Navigation. Damit ist der vollständige An-/Abmelde-Lebenszyklus abgedeckt.
+
+### 4.4 Wirkung auf die Coverage (Auth-Bereich)
+
+Passend zum Fokus wird die Coverage über die **auth-relevanten Module** gemessen (`bcrypt`, `jwt`, `authentication`, `controllers/users`+`user`, `routes/users`+`user`, `models/User`). Gegenüber der Baseline von **1,28 %** (gesamtes Backend, ungetestet):
+
+| Bereich (Auth-Slice) | Statements | Branches | Functions | Lines |
+|---|---|---|---|---|
+| **Gesamt** | **85,3 %** | 59,4 % | 84,6 % | 88,3 % |
+| `bcrypt.js`, `jwt.js` | 100 % | 100 % | 100 % | 100 % |
+| `middleware/authentication.js` | 95,5 % | 87,5 % | 100 % | 100 % |
+| `models/User.js`, `routes/user(s).js` | 100 % | 100 % | 100 % | 100 % |
+| `controllers/users.js` | 93,9 % | 83,3 % | 100 % | 100 % |
+
+Nicht vollständig abgedeckt ist `controllers/user.js`: dessen `updateUser`-Funktion (Profil ändern) liegt außerhalb des getesteten Login-/Register-/Current-User-Flows – bewusst ehrlich ausgewiesen.
 
 ---
 
 ## 5. CI/CD-Pipeline (GitHub Actions, self-hosted Runner)
 
-Zwei Workflows, ausgelegt für einen **self-hosted Runner (Windows + Docker)**. Da `services:`-Container auf Windows-Runnern nicht unterstützt werden, wird PostgreSQL portabel per **`docker compose`** bereitgestellt; alle Schritte laufen in `shell: bash` (Git Bash) → identisch auf Windows und Linux.
+Zwei Workflows, ausgelegt für einen **self-hosted Runner (Windows + Docker)**. Da `services:`-Container auf Windows-Runnern nicht unterstützt werden, wird PostgreSQL portabel per **`docker compose`** bereitgestellt. Es wird **bewusst keine bash erzwungen**: Auf Windows-Runnern würde `shell: bash` sonst die WSL-Bash treffen, die Windows-Pfade nicht versteht. Stattdessen nutzen die Schritte die Standard-Shell (PowerShell) und einzeilige Befehle.
 
 **`.github/workflows/ci.yml`** (bei Push/PR auf `main`):
 1. Checkout → Node 22 (npm-Cache) → `npm ci`
 2. `npx playwright install chromium`
-3. `docker compose up -d db` + Healthcheck-Warteschleife
+3. `docker compose up -d --wait db` (wartet, bis die DB „healthy" ist)
 4. `npm run lint --if-present` (Platzhalter, bis ein Linter ergänzt wird)
 5. **Alle Teststufen nacheinander:** Vitest-Baseline → Jest Unit → Jest Integration → Playwright E2E
 6. Playwright-Report als Artifact, danach `docker compose down`
 
-**`.github/workflows/load.yml`** (`workflow_dispatch`, **manuell**): startet DB + Backend, führt beide k6-Szenarien aus, erzeugt die Diagramme und lädt `load/charts/` + `summary.md` als Artifact hoch. Bewusst getrennt, da Load-Tests ressourcenintensiv und nicht für jeden Push gedacht sind.
+**`.github/workflows/load.yml`** (`workflow_dispatch`, **manuell**): ruft `npm run test:load:local` auf, das DB + Backend startet (via `start-server-and-test`), beide k6-Szenarien ausführt, die Diagramme erzeugt und das Backend wieder stoppt; anschließend werden `tests/load/charts/` + `summary.md` als Artifact hochgeladen. Bewusst getrennt, da Load-Tests ressourcenintensiv und nicht für jeden Push gedacht sind.
 
 DB-Zugangsdaten und `JWT_KEY` kommen als Job-`env:` (kein `.env` im Repo nötig); `NODE_ENV=test` setzen die npm-Skripte selbst via `cross-env`. Der Runner setzt automatisch `CI=true`, wodurch Playwright eigene Server startet (`reuseExistingServer:false`), `forbidOnly` aktiviert und einen Retry erlaubt.
 
-*Voraussetzungen auf dem Runner:* Label `self-hosted`, installiert Docker Desktop, Node, Git Bash; für den Load-Workflow zusätzlich **k6** im PATH.
+*Voraussetzungen auf dem Runner:* Label `self-hosted`, installiert Docker Desktop und Node; für den Load-Workflow zusätzlich **k6** im PATH.
 
 ---
 
 ## 6. Load-Tests (k6): Art, Zweck, Ergebnisse und Analyse
 
-Zwei Szenarien gegen die zentralen API-Endpunkte (Backend im Test-Modus gegen die Docker-PostgreSQL). Beide definieren **Thresholds** (Pass/Fail-Kriterien für Latenz und Fehlerrate).
+Passend zum Auth-Fokus zielen **beide** Szenarien auf den Login-Endpunkt `POST /api/users/login` – einmal unter normaler Last, einmal als Überlast. Beide definieren **Thresholds** (Pass/Fail-Kriterien für Latenz und Fehlerrate). Backend im Test-Modus gegen die Docker-PostgreSQL.
 
 | Test | Art | Zweck | Lastprofil |
 |---|---|---|---|
-| `load/articles-load.js` | **Last-/Throughput-Test** | Verhalten des meistgenutzten Lese-Endpunkts `GET /api/articles` unter steigender Last | Ramp 0→20 VUs (15 s), Plateau 20 VUs (30 s), Ramp-down (10 s) |
-| `load/auth-stress.js` | **Stress-/Spike-Test** | Den CPU-intensiven Login-Pfad `POST /api/users/login` (bcrypt) gezielt überlasten und die Kapazitätsgrenze finden | Warmup→10 VUs, **Spike auf 100 VUs**, Halten 100 VUs (20 s), Ramp-down |
+| `tests/load/login-load.js` | **Last-/Throughput-Test** | Verhalten des Logins unter **realistischer Normallast** | Ramp 0→15 VUs (15 s), Plateau 15 VUs (30 s), Ramp-down (10 s) |
+| `tests/load/auth-stress.js` | **Stress-/Spike-Test** | Den CPU-intensiven Login-Pfad (bcrypt) gezielt **überlasten** und die Kapazitätsgrenze finden | Warmup→10 VUs, **Spike auf 100 VUs**, Halten 100 VUs (20 s), Ramp-down |
 
 ### 6.1 Ergebnisübersicht
 
 | Test | Requests | Fehler % | avg | p90 | p95 | max | max VUs |
 |---|---|---|---|---|---|---|---|
-| GET /api/articles (Load) | 776 | 0,00 | 115 ms | 202 ms | **238 ms** | 304 ms | 20 |
-| POST /api/users/login (Stress/Spike) | 3136 | 0,00 | 831 ms | 1209 ms | **1228 ms** | 1307 ms | 100 |
+| Login – Last (15 VUs) | 4357 | 0,00 | 146 ms | 185 ms | **188 ms** | 210 ms | 15 |
+| Login – Stress/Spike (100 VUs) | 3186 | 0,00 | 818 ms | 1169 ms | **1171 ms** | 1179 ms | 100 |
 
 ### 6.2 Visualisierung
 
-**Lesepfad `GET /api/articles` – Latenz & Last**
+**Login unter Normallast (15 VUs)**
 
-![Latenz und VUs – GET /api/articles](tests/load/charts/articles-load-latency.svg)
+![Latenz und VUs – Login-Lasttest](tests/load/charts/login-load-latency.svg)
 
-![Durchsatz – GET /api/articles](tests/load/charts/articles-load-throughput.svg)
+![Durchsatz – Login-Lasttest](tests/load/charts/login-load-throughput.svg)
 
-**Auth-Pfad `POST /api/users/login` – Latenz & Last (Spike)**
+**Login unter Spike (100 VUs)**
 
 ![Latenz und VUs – Login-Stresstest](tests/load/charts/auth-stress-latency.svg)
 
@@ -224,15 +214,15 @@ Zwei Szenarien gegen die zentralen API-Endpunkte (Backend im Test-Modus gegen di
 
 ### 6.3 Analyse
 
-**1. Lesepfad ist gesund.** Bei 20 gleichzeitigen Nutzern bleibt p95 mit **238 ms** klar unter dem Schwellwert (500 ms), 0 % Fehler. Die Latenz wird von Datenbankabfragen dominiert: Pro Artikel werden mehrere Folgeabfragen ausgeführt (`appendFollowers`/`appendFavorites` – ein klassisches **N+1-Query-Muster**). Im getesteten Bereich ist das unkritisch, bei deutlich größeren Listen/Last wäre es der erste Optimierungskandidat (Eager Loading / Aggregation).
+**1. Normallast ist unkritisch.** Bei 15 gleichzeitigen Nutzern bleibt p95 mit **188 ms** klar unter dem Schwellwert (1 s), 0 % Fehler, stabiles Plateau. Der Login verhält sich unter erwarteter Last unauffällig.
 
-**2. Auth-Pfad zeigt eine klare Kapazitätsgrenze (Engpass).**
-- Bei niedriger Last (≤ 10 VUs): avg ≈ **70 ms**.
-- Mit dem Spike auf 100 VUs steigt die Latenz steil an und plateaut bei **≈ 1,15–1,3 s** (rund **17×** langsamer), der Durchsatz deckelt bei **≈ 78 req/s**.
-- **Ursache:** `bcryptCompare` mit Cost-Faktor 10 ist absichtlich rechenintensiv. Node.js verarbeitet das auf wenigen Threads; sobald die CPU sättigt, wachsen Requests in der Warteschlange → die Latenz steigt linear mit der Nebenläufigkeit, während der Durchsatz konstant bleibt (typisches Bild eines **CPU-gebundenen** Engpasses).
+**2. Unter Überlast zeigt sich eine klare Kapazitätsgrenze.**
+- Bei niedriger Last: min ≈ **47 ms**, avg ≈ 150 ms.
+- Mit dem Spike auf 100 VUs steigt die Latenz steil an und plateaut bei **≈ 1,17 s** (p95) – derselbe Endpunkt ist damit rund **6× langsamer** als unter Normallast (188 ms → 1171 ms).
+- **Ursache:** `bcryptCompare` mit Cost-Faktor 10 ist absichtlich rechenintensiv. Node.js verarbeitet das auf wenigen Threads; sobald die CPU sättigt, wachsen Requests in der Warteschlange → die Latenz steigt mit der Nebenläufigkeit, während der Durchsatz deckelt (typisches Bild eines **CPU-gebundenen** Engpasses).
 - **Bewertung:** Funktional korrekt (0 % Fehler), aber begrenzt skalierbar. Der Engpass liegt **nicht** in der Datenbank, sondern in der CPU-gebundenen Hash-Operation. Mögliche Maßnahmen: horizontale Skalierung (mehr Instanzen hinter einem Load Balancer), Rate-Limiting am Login-Endpunkt, oder eine bewusste Abwägung des bcrypt-Cost-Faktors (Sicherheit ↔ Durchsatz).
 
-**Fazit Load:** Lesepfade skalieren im getesteten Bereich problemlos; der Auth-Endpunkt ist der erwartbare, sicherheitsbedingte Flaschenhals. Die Tests bestätigen damit die Designentscheidung für eine realistische DB – die Engpässe sind reproduzierbar messbar.
+**Fazit Load:** Die direkte Gegenüberstellung *gleicher Endpunkt, unterschiedliche Last* lokalisiert die Grenze des Login-Pfads klar und reproduzierbar – der erwartbare, sicherheitsbedingte Flaschenhals (bcrypt) ist messbar belegt.
 
 ---
 
@@ -241,8 +231,9 @@ Zwei Szenarien gegen die zentralen API-Endpunkte (Backend im Test-Modus gegen di
 - **Lokal reproduzierbar:** Alle Stufen über die in Abschnitt 3.4 dokumentierten Befehle; einzige Voraussetzung Node + Docker.
 - **Isoliert:** Unit ohne externe Abhängigkeiten; Integration mit Schema-Reset + Truncate pro Test; E2E mit eindeutigen Daten; eigene Test-DB getrennt von Entwicklung.
 - **Automatisiert:** CI-Workflow führt Lint + alle Teststufen aus; Load-Tests separat manuell.
-- **Mengengerüst erfüllt:** 30 Unit + 19 Integration + 5 E2E + 2 Load = **56 Tests** (Minimum 22).
-- **Coverage:** Backend von **1,28 % → 71,66 %** Statements.
+- **Fokus:** Authentifizierungs-/Login-Bereich, über alle vier Pyramidenstufen abgedeckt.
+- **Mengengerüst erfüllt:** 12 Unit + 8 Integration + 4 E2E + 2 Load = **26 Tests** (Minimum 22).
+- **Coverage (Auth-Slice):** von **1,28 % → 85,3 %** Statements.
 
 ---
 

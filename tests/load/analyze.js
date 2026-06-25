@@ -10,7 +10,7 @@ const CHARTS = path.join(__dirname, "charts");
 fs.mkdirSync(CHARTS, { recursive: true });
 
 const TESTS = [
-  { key: "articles-load", title: "Load Test – GET /api/articles" },
+  { key: "login-load", title: "Load Test – POST /api/users/login" },
   { key: "auth-stress", title: "Stress/Spike – POST /api/users/login" },
 ];
 

@@ -7,12 +7,17 @@ module.exports = {
   roots: ["<rootDir>/tests"],
   testMatch: ["**/*.test.js"],
   setupFiles: ["<rootDir>/tests/helpers/loadEnv.js"],
+  // Fokus der Projektarbeit: der Authentifizierungs-/Login-Bereich.
+  // Coverage wird daher nur über die auth-relevanten Module gemessen.
   collectCoverageFrom: [
-    "backend/controllers/**/*.js",
-    "backend/middleware/**/*.js",
-    "backend/helper/**/*.js",
-    "backend/models/**/*.js",
-    "backend/routes/**/*.js",
+    "backend/helper/bcrypt.js",
+    "backend/helper/jwt.js",
+    "backend/middleware/authentication.js",
+    "backend/controllers/users.js",
+    "backend/controllers/user.js",
+    "backend/routes/users.js",
+    "backend/routes/user.js",
+    "backend/models/User.js",
     "!backend/**/*.test.js",
   ],
   coverageDirectory: "<rootDir>/coverage/jest",
